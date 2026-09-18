@@ -1,0 +1,65 @@
+{
+  "_comment": "Project management workflow schema for actormata. Stages define an FSM; agents.json binds LLM adapters per stage.",
+  "domain": "project_management",
+  "version": "1.0.0",
+  "wip_limits": {
+    "data_collection": 10,
+    "assessment": 5,
+    "prioritization": 3
+  },
+  "initial_stage": "intake",
+  "stages": {
+    "intake": {
+      "label": "Intake",
+      "description": "A new item has been submitted and is awaiting initial triage.",
+      "transition": "capture_only",
+      "on_trigger": "data_collection",
+      "terminal": false
+    },
+    "data_collection": {
+      "label": "Data Collection",
+      "description": "Gather enough information to assess the item.",
+      "transition": "llm_choice",
+      "question": "Review the entity context. Is there enough information to assess this item, or does it need more data? Answer with one of: ready, needs_more_info.",
+      "ready": "assessment",
+      "needs_more_info": "data_collection",
+      "terminal": false
+    },
+    "assessment": {
+      "label": "Assessment",
+      "description": "Evaluate the item's feasibility, risk, and effort.",
+      "transition": "llm_choice",
+      "question": "Assess this item for feasibility and risk. Should it move to prioritization, or is it fundamentally not actionable and should be rejected? Answer with one of: viable, rejected.",
+      "viable": "prioritization",
+      "rejected": "rejected",
+      "terminal": false
+    },
+    "prioritization": {
+      "label": "Prioritization",
+      "description": "Decide whether to activate or defer the item.",
+      "transition": "llm_choice",
+      "question": "Given current capacity and strategic fit, should this item be activated now or deferred? Answer with one of: activate, defer.",
+      "activate": "active",
+      "defer": "deferred",
+      "terminal": false
+    },
+    "active": {
+      "label": "Active",
+      "description": "Item is in progress.",
+      "transition": null,
+      "terminal": true
+    },
+    "deferred": {
+      "label": "Deferred",
+      "description": "Item is parked for future consideration.",
+      "transition": null,
+      "terminal": true
+    },
+    "rejected": {
+      "label": "Rejected",
+      "description": "Item has been assessed as not actionable.",
+      "transition": null,
+      "terminal": true
+    }
+  }
+}

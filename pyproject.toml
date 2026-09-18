@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "actormata"
+version = "0.1.0"
+description = "Agent-driven workflow engine using the actor model for safe concurrency"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+dependencies = [
+    "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.30"]
+anthropic = ["anthropic>=0.28"]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[project.scripts]
+actormata = "frontend.cli:entry_point"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["engine*", "agents*", "state*", "frontend*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.setuptools]
+package-dir = {"" = "."}
