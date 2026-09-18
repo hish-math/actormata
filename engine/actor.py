@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+from datetime import UTC
 from typing import Any, Callable, Coroutine
 
 from engine.fsm import FSMValidator
@@ -140,7 +141,7 @@ class EntityActor:
                 "from": from_stage,
                 "to": to_stage,
                 "reasoning": reasoning,
-                "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.datetime.now(UTC).isoformat(),
             }
         )
 
