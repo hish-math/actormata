@@ -24,17 +24,85 @@ touching the engine.
 
 ---
 
-## Quick start
+## Setup
+
+### 1. Install Python 3.11+
+
+**Windows**
+
+The easiest option is the official installer from [python.org/downloads](https://www.python.org/downloads/).
+During installation, tick **"Add python.exe to PATH"**.
+
+After installing, verify with:
+```powershell
+py --version        # Windows Python Launcher (preferred)
+# or
+python --version
+```
+
+If neither works, open **Settings → Apps → Advanced app settings → App execution
+aliases** and disable the Store alias for Python, then re-open your terminal.
+
+**Linux / macOS**
 
 ```bash
-# Install (no LLM needed for stub mode)
-pip install -e ".[dev]"
+# Ubuntu/Debian
+sudo apt update && sudo apt install python3.11 python3.11-venv python3-pip
 
+# macOS (via Homebrew)
+brew install python@3.11
+
+# Verify
+python3 --version
+```
+
+---
+
+### 2. Create a virtual environment and install
+
+**Windows (PowerShell)**
+
+```powershell
+cd "c:\path\to\actormata"
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+py -m pip install -e ".[dev]"
+```
+
+> If you see `cannot be loaded because running scripts is disabled`, run:
+> ```powershell
+> Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+> ```
+
+**Linux / macOS**
+
+```bash
+cd /path/to/actormata
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+---
+
+### 3. Verify the install
+
+```bash
+pytest tests/ -v
+```
+
+All tests should pass with no LLM key required (the stub adapter is used by default).
+
+---
+
+## Usage
+
+```bash
 # Create an entity and run through the full project-management lifecycle
 python -m frontend.cli new proj-001
 python -m frontend.cli run proj-001
 
-# Or step through manually
+# Step through manually
 python -m frontend.cli advance proj-001
 python -m frontend.cli history proj-001
 
@@ -43,10 +111,17 @@ python -m frontend.cli override proj-001 deferred --reason "deprioritised in Q3"
 ```
 
 By default the CLI uses `StubAdapter` (deterministic, no API key required).
-To use a real LLM:
+To use a real LLM, export your key before running:
 
 ```bash
-export OPENAI_API_KEY=sk-...      # or ANTHROPIC_API_KEY=...
+# OpenAI
+export OPENAI_API_KEY=sk-...          # Linux/macOS
+$env:OPENAI_API_KEY = "sk-..."        # Windows PowerShell
+
+# Anthropic
+export ANTHROPIC_API_KEY=sk-ant-...   # Linux/macOS
+$env:ANTHROPIC_API_KEY = "sk-ant-..." # Windows PowerShell
+
 python -m frontend.cli run proj-001
 ```
 
