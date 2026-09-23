@@ -1,5 +1,5 @@
 """
-frontend/cli.py — minimal command-line interface for actormata.
+frontend/cli.py -- minimal command-line interface for actormata.
 
 Commands
 --------
@@ -11,10 +11,10 @@ Commands
     actormata history <entity_id>              Show full transition history
 
 The CLI picks the adapter automatically:
-    - ACTORMATA_STUB=1   → StubAdapter (no LLM)
-    - OPENAI_API_KEY     → AgentAdapter (OpenAI)
-    - ANTHROPIC_API_KEY  → AgentAdapter (Anthropic)
-    - (nothing set)      → StubAdapter with a warning
+    - ACTORMATA_STUB=1   -> StubAdapter (no LLM)
+    - OPENAI_API_KEY     -> AgentAdapter (OpenAI)
+    - ANTHROPIC_API_KEY  -> AgentAdapter (Anthropic)
+    - (nothing set)      -> StubAdapter with a warning
 
 State is persisted to state.json in the current directory by default.
 Override with --state-file.
@@ -28,6 +28,20 @@ import json
 import os
 import sys
 from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Windows-safe Unicode output
+# On Windows the default console encoding is often cp1252, which cannot
+# encode characters like the right-arrow (\u2192).  Reconfiguring stdout
+# and stderr to UTF-8 here fixes UnicodeEncodeError for all downstream
+# print() calls without requiring users to set PYTHONIOENCODING manually.
+# ---------------------------------------------------------------------------
+if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf8"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+        sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+    except AttributeError:
+        pass  # Python < 3.7 or non-TextIOWrapper stdout; best effort
 
 
 # ---------------------------------------------------------------------------
@@ -45,7 +59,8 @@ def _repo_root() -> Path:
 
 
 def _load_json(path: Path) -> dict:
-    with path.open("r", encoding="utf-8") as f:
+    # utf-8-sig strips a UTF-8 BOM if present (common from Windows editors)
+    with path.open("r", encoding="utf-8-sig") as f:
         return json.load(f)
 
 
@@ -143,7 +158,7 @@ async def cmd_advance(args: argparse.Namespace) -> None:
     except Exception as exc:  # noqa: BLE001
         _die(str(exc))
         return
-    print(f"Advanced {entity_id!r} → stage={result['stage']!r}")
+    print(f"Advanced {entity_id!r} -> stage={result['stage']!r}")
     if result.get("history"):
         last = result["history"][-1]
         print(f"  reasoning: {last.get('reasoning', '')}")
@@ -176,7 +191,7 @@ async def cmd_run(args: argparse.Namespace) -> None:
         steps += 1
         last = result["history"][-1] if result.get("history") else {}
         print(
-            f"  step {steps}: {last.get('from', '?')} → {last.get('to', '?')}"
+            f"  step {steps}: {last.get('from', '?')} -> {last.get('to', '?')}"
             f"  [{last.get('reasoning', '')}]"
         )
     else:
@@ -218,7 +233,7 @@ async def cmd_history(args: argparse.Namespace) -> None:
     print()
     for i, entry in enumerate(history, 1):
         ts = entry.get("timestamp", "")
-        print(f"  {i:>3}. [{ts}] {entry.get('from', '?')} → {entry.get('to', '?')}")
+        print(f"  {i:>3}. [{ts}] {entry.get('from', '?')} -> {entry.get('to', '?')}")
         print(f"       {entry.get('reasoning', '')}")
 
 
@@ -228,54 +243,57 @@ async def cmd_history(args: argparse.Namespace) -> None:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="actormata",
-        description="Agent-driven workflow engine CLI",
-    )
-    parser.add_argument(
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument(
         "--state-file",
-        default="state.json",
+        default=argparse.SUPPRESS,
         metavar="PATH",
         help="Path to the JSON state file (default: state.json)",
     )
-    parser.add_argument(
+    common.add_argument(
         "--schema",
-        default=None,
+        default=argparse.SUPPRESS,
         metavar="PATH",
         help="Path to the schema JSON (default: schemas/project_management.json)",
     )
-    parser.add_argument(
+    common.add_argument(
         "--agents-file",
-        default=None,
+        default=argparse.SUPPRESS,
         metavar="PATH",
         help="Path to agents.json (default: agents.json if present)",
+    )
+
+    parser = argparse.ArgumentParser(
+        prog="actormata",
+        description="Agent-driven workflow engine CLI",
+        parents=[common],
     )
 
     sub = parser.add_subparsers(dest="command", required=True)
 
     # new
-    p_new = sub.add_parser("new", help="Create a new entity")
+    p_new = sub.add_parser("new", parents=[common], help="Create a new entity")
     p_new.add_argument("entity_id", help="Unique entity identifier")
 
     # list
-    sub.add_parser("list", help="List all entities and their current stages")
+    sub.add_parser("list", parents=[common], help="List all entities and their current stages")
 
     # advance
-    p_adv = sub.add_parser("advance", help="Advance an entity one step")
+    p_adv = sub.add_parser("advance", parents=[common], help="Advance an entity one step")
     p_adv.add_argument("entity_id")
 
     # run
-    p_run = sub.add_parser("run", help="Advance an entity until it reaches a terminal stage")
+    p_run = sub.add_parser("run", parents=[common], help="Advance an entity until it reaches a terminal stage")
     p_run.add_argument("entity_id")
 
     # override
-    p_over = sub.add_parser("override", help="Manually force an entity to a target stage")
+    p_over = sub.add_parser("override", parents=[common], help="Manually force an entity to a target stage")
     p_over.add_argument("entity_id")
     p_over.add_argument("target_stage")
     p_over.add_argument("--reason", default=None, help="Reason for override")
 
     # history
-    p_hist = sub.add_parser("history", help="Show transition history for an entity")
+    p_hist = sub.add_parser("history", parents=[common], help="Show transition history for an entity")
     p_hist.add_argument("entity_id")
 
     return parser
@@ -290,6 +308,14 @@ def entry_point() -> None:
     """Installed console script entry point."""
     parser = _build_parser()
     args = parser.parse_args()
+
+    # Populate defaults if not passed either globally or on subcommand
+    if not hasattr(args, "state_file"):
+        args.state_file = "state.json"
+    if not hasattr(args, "schema"):
+        args.schema = None
+    if not hasattr(args, "agents_file"):
+        args.agents_file = None
 
     handlers = {
         "new": cmd_new,

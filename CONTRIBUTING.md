@@ -48,7 +48,7 @@ touch them need:
 ## Development setup
 
 ```bash
-git clone https://github.com/your-org/actormata
+git clone https://github.com/hish-math/actormata.git
 cd actormata
 pip install -e ".[dev]"
 pytest tests/ -v

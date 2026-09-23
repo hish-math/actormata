@@ -1,0 +1,26 @@
+{
+  "_comment": [
+    "agents.example.json -- copy this to agents.json and fill in your settings.",
+    "KEY FIELDS: model, template (Jinja2 file in agents/prompts/), max_tokens, temperature.",
+    "PROVIDER: set OPENAI_API_KEY (OpenAI) or ANTHROPIC_API_KEY (Anthropic).",
+    "If neither is set, StubAdapter runs deterministically with no key needed."
+  ],
+  "data_collection": {
+    "model": "gpt-4o-mini",
+    "template": "data_collection.j2",
+    "max_tokens": 256,
+    "temperature": 0.1
+  },
+  "assessment": {
+    "model": "gpt-4o-mini",
+    "template": "assess.j2",
+    "max_tokens": 256,
+    "temperature": 0.2
+  },
+  "prioritization": {
+    "model": "gpt-4o",
+    "template": "prioritization.j2",
+    "max_tokens": 512,
+    "temperature": 0.3
+  }
+}

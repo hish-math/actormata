@@ -1,0 +1,50 @@
+{
+  "_comment": [
+    "schemas/simple_task.json -- a minimal personal task FSM.",
+    "Lifecycle: inbox -> review -> in_progress",
+    "                           -> deferred",
+    "Use this as a starting template when building your own domain schema."
+  ],
+  "domain": "simple_task",
+  "version": "1.0.0",
+  "wip_limits": {
+    "in_progress": 5
+  },
+  "initial_stage": "inbox",
+  "stages": {
+    "inbox": {
+      "label": "Inbox",
+      "description": "A newly captured task waiting to be reviewed.",
+      "transition": "capture_only",
+      "on_trigger": "review",
+      "terminal": false
+    },
+    "review": {
+      "label": "Review",
+      "description": "Decide whether to start the task now or defer it.",
+      "transition": "llm_choice",
+      "question": "Given the task context, should it be started immediately or deferred? Answer with one of: start, defer.",
+      "start": "in_progress",
+      "defer": "deferred",
+      "terminal": false
+    },
+    "in_progress": {
+      "label": "In Progress",
+      "description": "The task is actively being worked on.",
+      "transition": null,
+      "terminal": true
+    },
+    "done": {
+      "label": "Done",
+      "description": "The task has been completed.",
+      "transition": null,
+      "terminal": true
+    },
+    "deferred": {
+      "label": "Deferred",
+      "description": "The task is parked for later.",
+      "transition": null,
+      "terminal": true
+    }
+  }
+}
